@@ -1,0 +1,1 @@
+python test.py --model dehazeformer-b --dataset RESIDE-IN --exp indoor
