@@ -149,7 +149,7 @@ if __name__ == '__main__':
 				
 				writer.add_scalar('best_psnr', best_psnr, epoch+1)
 			
-			if (epoch+1) % 5 == 0:
+			if (epoch+1) % 11 == 0:
 				torch.save({'epoch': epoch+1,
 							'state_dict': network.state_dict(),
 							'optimizer_state_dict': optimizer.state_dict()},
@@ -160,26 +160,6 @@ if __name__ == '__main__':
 							'state_dict': network.state_dict(),
 							'optimizer_state_dict': optimizer.state_dict()},
                 			   os.path.join(save_dir, args.model+'_batch'+str(setting['batch_size'])+'_epoch'+str(setting['epochs'])+'_'+' _vgg19_'+str(epoch+1)+'.pth'))
-
-
-
-
-
-
-
-
-
-			if epoch % setting['eval_freq'] == 0:
-				avg_psnr = valid(val_loader, network)
-				
-				writer.add_scalar('valid_psnr', avg_psnr, epoch)
-
-				if avg_psnr > best_psnr:
-					best_psnr = avg_psnr
-					torch.save({'state_dict': network.state_dict()},
-                			   os.path.join(save_dir, args.model+'.pth'))
-				
-				writer.add_scalar('best_psnr', best_psnr, epoch)
 
 	else:
 		print('==> Existing trained model')

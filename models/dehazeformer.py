@@ -29,7 +29,7 @@ def vgg19_image_preproc(tensor_images):
     """
     preprocesses images in order to match the input requirement of VGG19 network
 
-    :param pil_images: a pytorch tensor of shape (N, C, H, W) or (C, H, W) for image(s)
+    :param tensor_images: a pytorch tensor of shape (N, C, H, W) or (C, H, W) for image(s)
     :return: pytorch Tensor of the same shape as input
     """
     preprocessor = transforms.Compose(
@@ -38,9 +38,25 @@ def vgg19_image_preproc(tensor_images):
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ]
     )
-    ret = preprocessor(pil_images)
+    ret = preprocessor(tensor_images)
 
     return ret
+
+def normalize_neg_one_2_pos_one(tensors):
+	"""
+    normalize images into range (-1, 1)
+
+    :param tensors: a pytorch tensor of shape (N, C, H, W) for image(s)
+    :return: pytorch Tensor of the same shape as input
+    """
+
+	min_ = torch.min(tensors)
+	max_ = torch.max(tensors)
+	range_ = max_ - min_
+	tensors = (tensors - min_) / (range_ / 2) - 1
+	
+	return tensors
+		
 
 
 class RLN(nn.Module):
@@ -530,6 +546,8 @@ class DehazeFormer(nn.Module):
 		H, W = x.shape[2:]
 		x = self.check_image_size(x)
 
+		# print("image element range:", torch.min(x), ",", torch.max(x), ")")
+
 		# initialize upsampler if have not done yet
 		if self.upsampler is None:
 			# calculate scale-up factor
@@ -541,9 +559,12 @@ class DehazeFormer(nn.Module):
 		vgg_feature = self.vgg_extractor(x_vgg_preproc)
 		# print("vgg feature size:", vgg_feature.shape)
 		vgg_feature = self.upsampler(vgg_feature)
+		vgg_feature = normalize_neg_one_2_pos_one(vgg_feature)
+		# print("vgg feature element range:", torch.min(vgg_feature[0]), ",", torch.max(vgg_feature[0]), ")")
 		# print("upsampled vgg feature size:", vgg_feature.shape)
 		x = torch.cat((x, vgg_feature), dim=1)
 		# print("x size after concatenating vgg feature:", x.shape)
+		# print("concatenated feature element range:", torch.min(x[0]), ",", torch.max(x[0]), ")")
 
 		feat = self.forward_features(x)
 		K, B = torch.split(feat, (1, 3), dim=1)
